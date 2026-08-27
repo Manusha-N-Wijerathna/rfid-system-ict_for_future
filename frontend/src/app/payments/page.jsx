@@ -36,16 +36,16 @@ export default function PaymentsPage() {
     // Filter data based on search and status
     const filteredData = data.filter(s => {
         const matchesSearch = s.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                             s.grade?.toLowerCase().includes(searchTerm.toLowerCase())
-        const matchesStatus = filterStatus === "all" || 
-                              (filterStatus === "paid" && s.paid) || 
-                              (filterStatus === "unpaid" && !s.paid)
+            s.grade?.toLowerCase().includes(searchTerm.toLowerCase())
+        const matchesStatus = filterStatus === "all" ||
+            (filterStatus === "paid" && s.paid) ||
+            (filterStatus === "unpaid" && !s.paid)
         return matchesSearch && matchesStatus
     })
 
     const paidCount = data.filter(s => s.paid).length
     const unpaidCount = data.length - paidCount
-    
+
     // FIXED: Properly parse numeric values
     const parseAmount = (amount) => {
         if (!amount && amount !== 0) return 0
@@ -55,7 +55,7 @@ export default function PaymentsPage() {
         const parsed = parseFloat(numericString)
         return isNaN(parsed) ? 0 : parsed
     }
-    
+
     const totalFees = data.reduce((sum, s) => sum + parseAmount(s.fee_amount), 0)
     const collectedFees = data.reduce((sum, s) => sum + (s.paid ? parseAmount(s.fee_amount) : 0), 0)
 
@@ -80,8 +80,8 @@ export default function PaymentsPage() {
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <select 
-                        value={month} 
+                    <select
+                        value={month}
                         onChange={e => setMonth(Number(e.target.value))}
                         className="text-sm border border-gray-200 rounded-lg px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
                         {Array.from({ length: 12 }, (_, i) => (
@@ -90,8 +90,8 @@ export default function PaymentsPage() {
                             </option>
                         ))}
                     </select>
-                    <select 
-                        value={year} 
+                    <select
+                        value={year}
                         onChange={e => setYear(Number(e.target.value))}
                         className="text-sm border border-gray-200 rounded-lg px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
                         {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
@@ -113,7 +113,7 @@ export default function PaymentsPage() {
                     </div>
                     <div className="mt-2">
                         <div className="w-full bg-gray-200 rounded-full h-1.5">
-                            <div 
+                            <div
                                 className="bg-green-500 h-1.5 rounded-full transition-all duration-500"
                                 style={{ width: `${data.length ? (paidCount / data.length) * 100 : 0}%` }}
                             ></div>
@@ -136,7 +136,7 @@ export default function PaymentsPage() {
                     </div>
                     <div className="mt-2">
                         <div className="w-full bg-gray-200 rounded-full h-1.5">
-                            <div 
+                            <div
                                 className="bg-red-500 h-1.5 rounded-full transition-all duration-500"
                                 style={{ width: `${data.length ? (unpaidCount / data.length) * 100 : 0}%` }}
                             ></div>
@@ -175,7 +175,7 @@ export default function PaymentsPage() {
                     </div>
                     <div className="mt-2">
                         <div className="w-full bg-gray-200 rounded-full h-1.5">
-                            <div 
+                            <div
                                 className="bg-purple-500 h-1.5 rounded-full transition-all duration-500"
                                 style={{ width: `${totalFees ? (collectedFees / totalFees) * 100 : 0}%` }}
                             ></div>
@@ -205,31 +205,28 @@ export default function PaymentsPage() {
                     <div className="flex gap-2">
                         <button
                             onClick={() => setFilterStatus("all")}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                                filterStatus === "all"
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${filterStatus === "all"
                                     ? "bg-green-600 text-white shadow-md"
                                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                            }`}
+                                }`}
                         >
                             All
                         </button>
                         <button
                             onClick={() => setFilterStatus("paid")}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                                filterStatus === "paid"
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${filterStatus === "paid"
                                     ? "bg-green-600 text-white shadow-md"
                                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                            }`}
+                                }`}
                         >
                             Paid
                         </button>
                         <button
                             onClick={() => setFilterStatus("unpaid")}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                                filterStatus === "unpaid"
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${filterStatus === "unpaid"
                                     ? "bg-green-600 text-white shadow-md"
                                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                            }`}
+                                }`}
                         >
                             Unpaid
                         </button>
@@ -322,8 +319,8 @@ export default function PaymentsPage() {
                                             )}
                                         </td>
                                         <td className="px-6 py-4">
-                                            <button 
-                                                onClick={() => toggle(s)} 
+                                            <button
+                                                onClick={() => toggle(s)}
                                                 disabled={toggling === s.student_id}
                                                 className={`px-4 py-2 rounded-lg text-xs font-medium transition-all duration-200 disabled:opacity-50
                                                     ${s.paid
@@ -350,21 +347,6 @@ export default function PaymentsPage() {
                 <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
                     <div className="flex flex-wrap justify-between items-center gap-3 text-sm">
                         <div className="flex items-center gap-4">
-                            <div>
-                                <span className="text-gray-500">Showing:</span>
-                                <span className="font-semibold text-gray-800 ml-1">{filteredData.length} students</span>
-                            </div>
-                            <div>
-                                <span className="text-gray-500">Total fees:</span>
-                                <span className="font-semibold text-green-700 ml-1">
-                                    Rs. {formatCurrency(filteredData.reduce((sum, s) => sum + parseAmount(s.fee_amount), 0))}
-                                </span>
-                            </div>
-                        </div>
-                        <div className="flex gap-2">
-                            <button className="px-3 py-1 text-xs bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-                                Export Report
-                            </button>
                         </div>
                     </div>
                 </div>
