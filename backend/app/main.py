@@ -25,9 +25,9 @@ app.include_router(admin.router)
 def startup():
     if test_connection():
         Base.metadata.create_all(bind=engine)
-        print("✅ Tables ready!")
+        print("[OK] Tables ready!")
     else:
-        print("❌ Could not connect to database — check your .env")
+        print("[ERROR] Could not connect to database - check your .env")
 
 
 @app.get("/")
