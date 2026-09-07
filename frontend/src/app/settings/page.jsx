@@ -1,7 +1,7 @@
 "use client"
 import { useEffect, useState } from "react"
-import { getAdminProfile, updateAdminProfile } from "@/lib/api"
-import { User, Key, Camera, Check, AlertCircle } from "lucide-react"
+import { getAdminProfile, updateAdminProfile, assignAdminRfid, startRegisterMode, stopRegisterMode, getRegisterResult } from "@/lib/api"
+import { User, Key, Camera, Check, AlertCircle, CreditCard } from "lucide-react"
 
 export default function SettingsPage() {
     const [fullName, setFullName] = useState("")
@@ -9,6 +9,8 @@ export default function SettingsPage() {
     const [password, setPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
     const [profilePicture, setProfilePicture] = useState("")
+    const [rfidUid, setRfidUid] = useState("")
+    const [registeringRfid, setRegisteringRfid] = useState(false)
     
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
@@ -24,6 +26,7 @@ export default function SettingsPage() {
                 setFullName(data.full_name || "")
                 setUsername(data.username || "")
                 setProfilePicture(data.profile_picture || "")
+                setRfidUid(data.rfid_uid || "")
             } catch (err) {
                 console.error("Failed to load admin profile:", err)
                 setError("Failed to load admin profile data.")
@@ -33,6 +36,41 @@ export default function SettingsPage() {
         }
         fetchProfile()
     }, [])
+
+    useEffect(() => {
+        if (!registeringRfid) return
+        const interval = setInterval(async () => {
+            try {
+                const res = await getRegisterResult()
+                if (!res.data.scanned_uid) return
+                const uid = res.data.scanned_uid
+                await assignAdminRfid(uid)
+                setRfidUid(uid)
+                setRegisteringRfid(false)
+                setMessage("Admin RFID card assigned successfully!")
+            } catch (err) {
+                setRegisteringRfid(false)
+                setError(err.response?.data?.detail || "Failed to assign RFID card.")
+            }
+        }, 700)
+        return () => clearInterval(interval)
+    }, [registeringRfid])
+
+    const registerAdminRfid = async () => {
+        setError(null)
+        setMessage(null)
+        try {
+            await startRegisterMode()
+            setRegisteringRfid(true)
+        } catch {
+            setError("Could not start RFID registration mode.")
+        }
+    }
+
+    const cancelRfidRegistration = async () => {
+        await stopRegisterMode()
+        setRegisteringRfid(false)
+    }
 
     const handleImageUpload = (e) => {
         const file = e.target.files[0]
@@ -240,7 +278,32 @@ export default function SettingsPage() {
                     </div>
                 </div>
 
-                {/* 3. Password Security */}
+                {/* 3. Admin RFID Login */}
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 space-y-4">
+                    <h3 className="text-base font-semibold text-gray-800 flex items-center gap-2 border-b border-gray-100 pb-3">
+                        <CreditCard className="w-5 h-5 text-emerald-600" />
+                        Admin RFID Login
+                    </h3>
+                    <p className="text-xs text-gray-500">Assign an RFID card so the admin can sign in without a password.</p>
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Assigned card</p>
+                            <p className="mt-1 font-mono text-sm text-gray-700">{rfidUid || "No card assigned"}</p>
+                        </div>
+                        {registeringRfid ? (
+                            <button type="button" onClick={cancelRfidRegistration} className="rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-600">
+                                Cancel and wait for card
+                            </button>
+                        ) : (
+                            <button type="button" onClick={registerAdminRfid} className="rounded-xl bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700 border border-emerald-200">
+                                Scan new admin card
+                            </button>
+                        )}
+                    </div>
+                    {registeringRfid && <p className="text-xs font-medium text-emerald-700">Registration mode active. Scan the admin card now.</p>}
+                </div>
+
+                {/* 4. Password Security */}
                 <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 space-y-4">
                     <h3 className="text-base font-semibold text-gray-800 flex items-center gap-2 border-b border-gray-100 pb-3">
                         <Key className="w-5 h-5 text-emerald-600" />

@@ -66,16 +66,16 @@ export default function TopBar() {
     const displayInitial = displayName.charAt(0).toUpperCase()
 
     return (
-        <header className="bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between shadow-sm">
+        <header className="bg-white border-b border-gray-100 px-4 py-3 sm:px-6 sm:py-4 flex items-center justify-between shadow-sm">
             {/* Left side - Date and Time */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0">
                 <div className="flex flex-col">
-                    <p className="text-sm font-medium text-gray-700">{today}</p>
+                    <p className="text-xs sm:text-sm font-medium text-gray-700 whitespace-nowrap">{today}</p>
                     <p className="text-xs text-gray-400">{timeString}</p>
                 </div>
                 
                 {/* System Status */}
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-full">
+                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-full">
                     {isOnline ? (
                         <>
                             <Wifi className="w-3.5 h-3.5 text-green-500" />

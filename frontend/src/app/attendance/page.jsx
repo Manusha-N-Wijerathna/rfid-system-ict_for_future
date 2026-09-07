@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from "react"
 import {
     getStudents, getLiveAttendance, getAttendance,
-    manualMark, manualUnmark, getMonthlyReport,getTotalStudents
+    getPayments, manualMark, removeAttendanceRecord, getMonthlyReport,getTotalStudents
 } from "@/lib/api"
 import StudentReportModal from "@/components/StudentReportModal"
 
@@ -10,7 +10,13 @@ import StudentReportModal from "@/components/StudentReportModal"
 const MONTHS = ["January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"]
 
-const today = () => new Date().toISOString().split("T")[0]
+const today = () => {
+    const current = new Date()
+    const year = current.getFullYear()
+    const month = String(current.getMonth() + 1).padStart(2, "0")
+    const day = String(current.getDate()).padStart(2, "0")
+    return `${year}-${month}-${day}`
+}
 
 export default function AttendancePage() {
     const now = new Date()
@@ -42,6 +48,7 @@ export default function AttendancePage() {
     const [students, setStudents] = useState([])
     const [selDate, setSelDate] = useState(today())
     const [dateRecords, setDateRecords] = useState([])
+    const [paymentStatus, setPaymentStatus] = useState({})
     const [manLoading, setManLoading] = useState(false)
     const [marking, setMarking] = useState(null)
 
@@ -55,18 +62,28 @@ export default function AttendancePage() {
         finally { setManLoading(false) }
     }, [])
 
+    const loadPaymentStatus = useCallback(async () => {
+        try {
+            const paymentDate = new Date()
+            const r = await getPayments(paymentDate.getMonth() + 1, paymentDate.getFullYear())
+            setPaymentStatus(Object.fromEntries(r.data.map(payment => [payment.student_id, payment.paid])))
+        } catch { }
+    }, [])
+
     useEffect(() => {
         if (activeTab !== "manual") return
         loadStudents()
         loadDateRecords(selDate)
-    }, [activeTab, selDate])
+        loadPaymentStatus()
+    }, [activeTab, selDate, loadPaymentStatus])
 
     const isPresent = (studentId) => dateRecords.some(r => r.student_id === studentId)
 
     const toggleAttendance = async (student) => {
         setMarking(student.id)
         try {
-            if (isPresent(student.id)) await manualUnmark(student.id, selDate)
+            const record = dateRecords.find(r => r.student_id === student.id)
+            if (record) await removeAttendanceRecord(record.id)
             else await manualMark(student.id, selDate)
             await loadDateRecords(selDate)
         } catch { alert("Failed to update attendance.") }
@@ -216,10 +233,22 @@ export default function AttendancePage() {
                                             </div>
                                             <div className="text-right">
                                                 <p className="text-sm font-mono font-semibold text-green-600">{r.time}</p>
-                                                <span className="inline-flex items-center gap-1 text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full mt-1">
-                                                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-                                                    Present
-                                                </span>
+                                                <div className="flex flex-wrap justify-end gap-1 mt-1">
+                                                    <span className="inline-flex items-center gap-1 text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                                                        <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                                                        Present
+                                                    </span>
+                                                    <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full ${
+                                                        r.payment_paid
+                                                            ? "bg-blue-100 text-blue-700"
+                                                            : "bg-amber-100 text-amber-700"
+                                                    }`}>
+                                                        <span className={`w-1.5 h-1.5 rounded-full ${
+                                                            r.payment_paid ? "bg-blue-500" : "bg-amber-500"
+                                                        }`}></span>
+                                                        {r.payment_paid ? "Paid" : "Unpaid"}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -284,6 +313,7 @@ export default function AttendancePage() {
                                             <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Student</th>
                                             <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Grade</th>
                                             <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Payment</th>
                                             <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Action</th>
                                         </tr>
                                     </thead>
@@ -306,6 +336,12 @@ export default function AttendancePage() {
                                                         <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium
                                                             ${present ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
                                                             {present ? "✓ Present" : "✗ Absent"}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium
+                                                            ${paymentStatus[s.id] ? "bg-blue-100 text-blue-800" : "bg-amber-100 text-amber-800"}`}>
+                                                            {paymentStatus[s.id] ? "Paid" : "Unpaid"}
                                                         </span>
                                                     </td>
                                                     <td className="px-6 py-4">

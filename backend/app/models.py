@@ -12,6 +12,7 @@ class Admin(Base):
     username        = Column(String(50),  unique=True, nullable=False)
     password_hash   = Column(String(255), nullable=False)
     profile_picture = Column(Text,        nullable=True)
+    rfid_uid        = Column(String(50),   unique=True, nullable=True)
 
 
 

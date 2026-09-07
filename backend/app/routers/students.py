@@ -39,11 +39,15 @@ def get_student(student_id: int, db: Session = Depends(get_db)):
 @router.post("/", response_model=schemas.StudentOut)
 def add_student(data: schemas.StudentCreate, db: Session = Depends(get_db)):
     if data.rfid_uid:
+        uid = data.rfid_uid.strip().upper()
         dup = db.query(models.Student).filter(
-            models.Student.rfid_uid == data.rfid_uid.strip().upper()
+            models.Student.rfid_uid == uid
         ).first()
         if dup:
             raise HTTPException(status_code=400, detail="RFID UID already registered")
+        admin_card = db.query(models.Admin).filter(models.Admin.rfid_uid == uid).first()
+        if admin_card:
+            raise HTTPException(status_code=400, detail="RFID UID is assigned to an admin")
     student = models.Student(
         name=data.name.strip(),
         grade=data.grade,
@@ -64,7 +68,23 @@ def update_student(student_id: int, data: schemas.StudentUpdate, db: Session = D
     student = db.query(models.Student).filter(models.Student.id == student_id).first()
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
-    for field, value in data.dict(exclude_unset=True).items():
+
+    updates = data.dict(exclude_unset=True)
+    if "rfid_uid" in updates:
+        uid = updates["rfid_uid"].strip().upper() if updates["rfid_uid"] else None
+        if uid:
+            existing = db.query(models.Student).filter(
+                models.Student.rfid_uid == uid,
+                models.Student.id != student_id,
+            ).first()
+            if existing:
+                raise HTTPException(status_code=400, detail=f"RFID UID already assigned to {existing.name}")
+            admin_card = db.query(models.Admin).filter(models.Admin.rfid_uid == uid).first()
+            if admin_card:
+                raise HTTPException(status_code=400, detail="RFID UID is assigned to an admin")
+        updates["rfid_uid"] = uid
+
+    for field, value in updates.items():
         setattr(student, field, value)
     db.commit()
     db.refresh(student)
@@ -82,6 +102,9 @@ def assign_rfid(student_id: int, data: schemas.AssignRFIDIn, db: Session = Depen
     ).first()
     if existing:
         raise HTTPException(status_code=400, detail=f"RFID UID already assigned to {existing.name}")
+    admin_card = db.query(models.Admin).filter(models.Admin.rfid_uid == data.rfid_uid.strip().upper()).first()
+    if admin_card:
+        raise HTTPException(status_code=400, detail="RFID UID is assigned to an admin")
     student.rfid_uid = data.rfid_uid.strip().upper()
     db.commit()
     db.refresh(student)

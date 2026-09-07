@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 from app.database import engine, Base, test_connection
 from app.routers import students, attendance, payments, admin
 
@@ -25,9 +26,16 @@ app.include_router(admin.router)
 def startup():
     if test_connection():
         Base.metadata.create_all(bind=engine)
-        print("✅ Tables ready!")
+        with engine.begin() as conn:
+            has_rfid_column = conn.execute(text("""
+                SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+                WHERE TABLE_NAME = 'admins' AND COLUMN_NAME = 'rfid_uid'
+            """)).scalar()
+            if not has_rfid_column:
+                conn.execute(text("ALTER TABLE admins ADD rfid_uid VARCHAR(50) NULL"))
+        print("[OK] Tables ready!")
     else:
-        print("❌ Could not connect to database — check your .env")
+        print("[ERROR] Could not connect to database - check your .env")
 
 
 @app.get("/")

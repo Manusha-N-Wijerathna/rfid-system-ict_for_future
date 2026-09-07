@@ -1,15 +1,46 @@
 "use client"
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { loginAdmin } from "@/lib/api"
+import { useEffect, useState } from "react"
+import { clearRfidLoginResult, getRfidLoginResult, loginAdmin } from "@/lib/api"
 
 export default function LoginPage() {
-    const router = useRouter()
     const [username, setUsername] = useState("")
     const [password, setPassword] = useState("")
     const [showPassword, setShowPassword] = useState(false)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState("")
+    const [rfidMessage, setRfidMessage] = useState("")
+
+    useEffect(() => {
+        localStorage.removeItem("admin_token")
+        localStorage.removeItem("admin_user")
+
+        let active = true
+        const checkRfidLogin = async () => {
+            try {
+                const res = await getRfidLoginResult()
+                if (!active || !res.data?.token) return
+                setUsername(res.data.admin?.username || "")
+                setRfidMessage(`RFID detected for ${res.data.admin?.full_name || "admin"}`)
+                localStorage.setItem("admin_token", res.data.token)
+                localStorage.setItem("admin_user", JSON.stringify(res.data.admin))
+                await clearRfidLoginResult().catch(() => {})
+                window.dispatchEvent(new Event("adminAuthChanged"))
+                window.location.assign("/dashboard")
+            } catch { }
+        }
+        let interval
+        clearRfidLoginResult()
+            .catch(() => {})
+            .finally(() => {
+                if (!active) return
+                checkRfidLogin()
+                interval = setInterval(checkRfidLogin, 1000)
+            })
+        return () => {
+            active = false
+            if (interval) clearInterval(interval)
+        }
+    }, [])
 
     const handleSubmit = async (e) => {
         e.preventDefault()
@@ -65,6 +96,12 @@ export default function LoginPage() {
                     <div className="bg-red-500/20 border border-red-500/40 rounded-xl px-4 py-3 text-red-200 text-xs flex items-center gap-2">
                         <span>⚠️</span>
                         <span>{error}</span>
+                    </div>
+                )}
+
+                {rfidMessage && (
+                    <div className="rounded-xl border border-emerald-400/30 bg-emerald-500/15 px-4 py-3 text-center text-xs text-emerald-100">
+                        {rfidMessage}
                     </div>
                 )}
 
@@ -124,6 +161,10 @@ export default function LoginPage() {
                         )}
                     </button>
                 </form>
+
+                <p className="text-center text-xs text-gray-400">
+                    Scan the assigned admin RFID card while this page is open to sign in automatically.
+                </p>
 
                 {/* Default Credentials Setup Note */}
                 <div className="bg-white/5 border border-white/10 rounded-xl p-3 text-center text-xs text-gray-300 space-y-1">

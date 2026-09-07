@@ -8,11 +8,15 @@ class AdminLoginIn(BaseModel):
     username: str
     password: str
 
+class AdminRfidLoginIn(BaseModel):
+    rfid_uid: str
+
 class AdminProfileOut(BaseModel):
     id:              int
     full_name:       str
     username:        str
     profile_picture: Optional[str] = None
+    rfid_uid:        Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -22,6 +26,7 @@ class AdminProfileUpdate(BaseModel):
     username:        Optional[str] = None
     password:        Optional[str] = None
     profile_picture: Optional[str] = None
+    rfid_uid:        Optional[str] = None
 
 
 
@@ -37,6 +42,7 @@ class StudentCreate(BaseModel):
 class StudentUpdate(BaseModel):
     name:        Optional[str]  = None
     grade:       Optional[str]  = None
+    rfid_uid:    Optional[str]  = None
     phone:       Optional[str]  = None
     parent_name: Optional[str]  = None
     address:     Optional[str]  = None
@@ -75,6 +81,7 @@ class AttendanceOut(BaseModel):
     grade:        str
     rfid_uid:     Optional[str] = None
     time:         str
+    payment_paid: bool = False
 
     class Config:
         from_attributes = True
