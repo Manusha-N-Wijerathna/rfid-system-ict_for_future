@@ -12,7 +12,9 @@ import {
   ChevronRight,
   Users,
   FileText,
-  School
+    School,
+    Menu,
+    X
 } from "lucide-react"
 import { useState } from "react"
 
@@ -31,7 +33,7 @@ export default function Sidebar() {
     const pathname = usePathname()
     const router = useRouter()
     const [collapsed, setCollapsed] = useState(false)
-    const [hovered, setHovered] = useState(false)
+    const [mobileOpen, setMobileOpen] = useState(false)
 
     const toggleSidebar = () => {
         setCollapsed(!collapsed)
@@ -46,21 +48,17 @@ export default function Sidebar() {
     return (
         <>
             {/* Mobile Overlay */}
-            {!collapsed && (
+            {mobileOpen && (
                 <div 
-                    className="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden"
-                    onClick={() => setCollapsed(true)}
+                    className="fixed inset-0 bg-gray-900/30 backdrop-blur-[2px] z-40 lg:hidden"
+                    onClick={() => setMobileOpen(false)}
                 />
             )}
 
             {/* Sidebar */}
             <aside 
-                className={`fixed lg:relative z-30 bg-white shadow-xl flex flex-col transition-all duration-300 ease-in-out
-                    ${collapsed ? 'w-20' : 'w-64'} 
-                    ${collapsed ? 'translate-x-0' : 'translate-x-0'}
-                    lg:translate-x-0 h-full`}
-                onMouseEnter={() => setHovered(true)}
-                onMouseLeave={() => setHovered(false)}
+                className={`hidden lg:flex relative z-30 bg-white shadow-xl flex-col transition-all duration-300 ease-in-out
+                    ${collapsed ? 'w-20' : 'w-64'} h-full`}
             >
                 {/* Header with Icon */}
                 <div className={`px-5 py-6 border-b border-gray-100 transition-all duration-300
@@ -194,6 +192,54 @@ export default function Sidebar() {
                 </button>
             </aside>
 
+            {/* Mobile floating navigation */}
+            <div className="lg:hidden">
+                {mobileOpen && (
+                    <div className="fixed bottom-24 left-4 z-50 w-[min(18rem,calc(100vw-2rem))] rounded-3xl border border-white/80 bg-white/95 p-3 shadow-2xl shadow-gray-900/20 backdrop-blur animate-slideUp">
+                        <div className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+                            Navigation
+                        </div>
+                        <nav className="grid gap-1.5">
+                            {[...navItems, ...bottomNavItems].map((item) => {
+                                const active = pathname === item.href || pathname.startsWith(item.href + "/")
+                                const Icon = item.icon
+                                return (
+                                    <Link
+                                        key={item.href}
+                                        href={item.href}
+                                        onClick={() => setMobileOpen(false)}
+                                        className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-colors ${
+                                            active
+                                                ? "bg-green-50 text-green-700"
+                                                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                                        }`}
+                                    >
+                                        <Icon className={`h-5 w-5 ${active ? "text-green-600" : item.color}`} />
+                                        <span>{item.label}</span>
+                                    </Link>
+                                )
+                            })}
+                            <button
+                                onClick={handleLogout}
+                                className="flex items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+                            >
+                                <LogOut className="h-5 w-5" />
+                                <span>Logout</span>
+                            </button>
+                        </nav>
+                    </div>
+                )}
+                <button
+                    type="button"
+                    aria-label={mobileOpen ? "Close navigation" : "Open navigation"}
+                    aria-expanded={mobileOpen}
+                    onClick={() => setMobileOpen(!mobileOpen)}
+                    className="fixed bottom-5 left-4 z-50 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-green-600 to-emerald-600 text-white shadow-xl shadow-green-900/25 transition-transform duration-200 hover:scale-105 active:scale-95"
+                >
+                    {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                </button>
+            </div>
+
             <style jsx>{`
                 /* Custom scrollbar */
                 nav::-webkit-scrollbar {
@@ -209,6 +255,19 @@ export default function Sidebar() {
                 }
                 nav::-webkit-scrollbar-thumb:hover {
                     background: #a8a8a8;
+                }
+                @keyframes slideUp {
+                    from {
+                        opacity: 0;
+                        transform: translateY(12px) scale(0.98);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0) scale(1);
+                    }
+                }
+                .animate-slideUp {
+                    animation: slideUp 0.2s ease-out;
                 }
             `}</style>
         </>

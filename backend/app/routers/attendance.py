@@ -42,6 +42,14 @@ def get_register_mode_result():
 # ── RFID scan (ESP32) ──────────────────────────────────────
 @router.post("/scan")
 def rfid_scan(data: schemas.RFIDScanIn, db: Session = Depends(get_db)):
+    admin = db.query(models.Admin).filter(
+        models.Admin.rfid_uid == data.rfid_uid.strip().upper()
+    ).first()
+    if admin:
+        from app.routers.admin import login_rfid
+        login_rfid(schemas.AdminRfidLoginIn(rfid_uid=data.rfid_uid), db)
+        return {"message": "Admin RFID login ready", "admin": admin.full_name}
+
     if _register_mode["active"]:
         _register_mode["scanned_uid"] = data.rfid_uid
         _register_mode["scanned_at"]  = datetime.now().isoformat()
@@ -124,13 +132,38 @@ def manual_unmark(student_id: int, date_str: str = None, db: Session = Depends(g
     return {"message": "Attendance removed"}
 
 
+@router.delete("/record/{attendance_id}")
+def remove_attendance_record(attendance_id: int, db: Session = Depends(get_db)):
+    """Remove one exact attendance record, including an accidental RFID scan."""
+    record = db.query(models.Attendance).filter(models.Attendance.id == attendance_id).first()
+    if not record:
+        raise HTTPException(status_code=404, detail="Attendance record not found")
+    db.delete(record)
+    db.commit()
+    return {"message": "Attendance removed"}
+
+
 # ── Live feed ──────────────────────────────────────────────
+def _current_payment_status(db: Session, records):
+    student_ids = {record.student_id for record in records}
+    if not student_ids:
+        return {}
+
+    payments = db.query(models.Payment).filter(
+        models.Payment.student_id.in_(student_ids),
+        models.Payment.month == date.today().month,
+        models.Payment.year == date.today().year,
+    ).all()
+    return {payment.student_id: payment.paid for payment in payments}
+
+
 @router.get("/live", response_model=list[schemas.AttendanceOut])
 def live_attendance(db: Session = Depends(get_db)):
     today_start = datetime.combine(date.today(), datetime.min.time())
     records = db.query(models.Attendance).filter(
         models.Attendance.scanned_at >= today_start
     ).order_by(models.Attendance.scanned_at.desc()).all()
+    payment_status = _current_payment_status(db, records)
     return [
         schemas.AttendanceOut(
             id=r.id,
@@ -139,6 +172,7 @@ def live_attendance(db: Session = Depends(get_db)):
             grade=r.student.grade,
             rfid_uid=r.student.rfid_uid,
             time=r.scanned_at.strftime("%I:%M %p"),
+            payment_paid=payment_status.get(r.student_id, False),
         )
         for r in records
     ]
@@ -156,6 +190,7 @@ def get_attendance_by_date(date_str: str = None, db: Session = Depends(get_db)):
     records = db.query(models.Attendance).filter(
         models.Attendance.scanned_at.between(start, end)
     ).order_by(models.Attendance.scanned_at.desc()).all()
+    payment_status = _current_payment_status(db, records)
     return [
         schemas.AttendanceOut(
             id=r.id,
@@ -164,6 +199,7 @@ def get_attendance_by_date(date_str: str = None, db: Session = Depends(get_db)):
             grade=r.student.grade,
             rfid_uid=r.student.rfid_uid,
             time=r.scanned_at.strftime("%I:%M %p"),
+            payment_paid=payment_status.get(r.student_id, False),
         )
         for r in records
     ]

@@ -4,6 +4,7 @@ import {
     getStudents, addStudent, updateStudent, deleteStudent,
     getGradeFees, updateGradeFee,
     getStudentHistory, getStudentPayments,
+    startRegisterMode, stopRegisterMode, getRegisterResult,
 } from "@/lib/api"
 
 const GRADES = ["Grade 6", "Grade 7", "Grade 8", "Grade 9", "Grade 10", "Grade 11", "A/L Bio", "A/L Maths", "A/L Arts", "A/L IT"]
@@ -60,6 +61,8 @@ export default function StudentsPage() {
     const [regForm, setRegForm] = useState(EMPTY)
     const [regErrors, setRegErrors] = useState({})
     const [regLastSaved, setRegLastSaved] = useState(null)
+    const [rfidCapture, setRfidCapture] = useState(null)
+    const [rfidCaptureError, setRfidCaptureError] = useState("")
 
     // View modal
     const [viewStudent, setViewStudent] = useState(null)
@@ -95,6 +98,43 @@ export default function StudentsPage() {
 
     useEffect(() => { load() }, [load])
 
+    useEffect(() => {
+        if (!rfidCapture) return
+        const interval = setInterval(async () => {
+            try {
+                const result = await getRegisterResult()
+                if (!result.data.scanned_uid) return
+                const uid = result.data.scanned_uid.trim().toUpperCase()
+                if (rfidCapture === "registration") {
+                    setRegForm(form => ({ ...form, rfid_uid: uid }))
+                } else {
+                    setEditForm(form => ({ ...form, rfid_uid: uid }))
+                }
+                setRfidCapture(null)
+                setRfidCaptureError("")
+            } catch (err) {
+                setRfidCapture(null)
+                setRfidCaptureError(err.response?.data?.detail || "Could not read RFID card.")
+            }
+        }, 600)
+        return () => clearInterval(interval)
+    }, [rfidCapture])
+
+    const captureRfid = async (target) => {
+        setRfidCaptureError("")
+        try {
+            await startRegisterMode()
+            setRfidCapture(target)
+        } catch {
+            setRfidCaptureError("Could not start RFID scan mode.")
+        }
+    }
+
+    const cancelRfidCapture = async () => {
+        await stopRegisterMode().catch(() => {})
+        setRfidCapture(null)
+    }
+
     const feeFor = (grade) => { const f = fees.find(f => f.grade === grade); return f ? Number(f.fee_amount) : null }
 
     useEffect(() => {
@@ -115,8 +155,11 @@ export default function StudentsPage() {
             .finally(() => setPayLoading(false))
     }, [viewStudent, viewTab])
 
-    const openReg = () => { setRegForm(EMPTY); setRegErrors({}); setRegLastSaved(null); setShowReg(true) }
-    const closeReg = () => { setRegForm(EMPTY); setRegErrors({}); setRegLastSaved(null); setShowReg(false) }
+    const openReg = () => { setRegForm(EMPTY); setRegErrors({}); setRegLastSaved(null); setRfidCaptureError(""); setShowReg(true) }
+    const closeReg = () => {
+        if (rfidCapture === "registration") cancelRfidCapture()
+        setRegForm(EMPTY); setRegErrors({}); setRegLastSaved(null); setShowReg(false)
+    }
 
     const handleRegister = async () => {
         const e = {}
@@ -127,7 +170,8 @@ export default function StudentsPage() {
         try {
             await addStudent({
                 name: regForm.name.trim(), grade: regForm.grade, phone: regForm.phone || null,
-                parent_name: regForm.parent_name || null, address: regForm.address || null, dob: regForm.dob || null
+                parent_name: regForm.parent_name || null, address: regForm.address || null, dob: regForm.dob || null,
+                rfid_uid: regForm.rfid_uid || null
             })
             const saved = regForm.name.trim()
             await load()
@@ -150,7 +194,7 @@ export default function StudentsPage() {
         setViewStudent(t)
         setEditForm({
             name: t.name, grade: t.grade, phone: t.phone || "",
-            parent_name: t.parent_name || "", address: t.address || "", dob: t.dob || ""
+            parent_name: t.parent_name || "", address: t.address || "", dob: t.dob || "", rfid_uid: t.rfid_uid || ""
         })
         setEditErrors({}); setEditMode(true)
     }
@@ -162,6 +206,7 @@ export default function StudentsPage() {
         try {
             const res = await updateStudent(viewStudent.id, {
                 name: editForm.name.trim(), grade: editForm.grade,
+                rfid_uid: editForm.rfid_uid || null,
                 phone: editForm.phone || null, parent_name: editForm.parent_name || null,
                 address: editForm.address || null, dob: editForm.dob || null
             })
@@ -568,7 +613,26 @@ export default function StudentsPage() {
                                 />
                             </Inp>
                         </div>
+                        <div className="col-span-2 rounded-xl border border-orange-200 bg-orange-50 p-4">
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                    <p className="text-xs font-semibold uppercase tracking-wide text-orange-700">RFID Card</p>
+                                    <p className="mt-1 font-mono text-sm text-gray-700">{regForm.rfid_uid || "No card assigned"}</p>
+                                </div>
+                                {rfidCapture === "registration" ? (
+                                    <button type="button" onClick={cancelRfidCapture} className="rounded-xl border border-red-200 bg-white px-4 py-2 text-xs font-semibold text-red-600">
+                                        Cancel scan
+                                    </button>
+                                ) : (
+                                    <button type="button" onClick={() => captureRfid("registration")} className="rounded-xl border border-orange-200 bg-white px-4 py-2 text-xs font-semibold text-orange-700 hover:bg-orange-100">
+                                        Scan RFID card
+                                    </button>
+                                )}
+                            </div>
+                            {rfidCapture === "registration" && <p className="mt-2 text-xs font-medium text-orange-700">Scan the student card now.</p>}
+                        </div>
                     </div>
+                    {rfidCaptureError && <p className="text-xs text-red-600">{rfidCaptureError}</p>}
                     {regForm.grade && (
                         <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl px-4 py-3 flex items-center justify-between border border-green-200">
                             <span className="text-sm text-green-700">Monthly fee for <strong>{regForm.grade}</strong></span>
@@ -700,6 +764,25 @@ export default function StudentsPage() {
                                                 />
                                             </Inp>
                                         </div>
+                                        <div className="col-span-2 rounded-xl border border-orange-200 bg-orange-50 p-4">
+                                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                                <div>
+                                                    <p className="text-xs font-semibold uppercase tracking-wide text-orange-700">RFID Card</p>
+                                                    <p className="mt-1 font-mono text-sm text-gray-700">{editForm.rfid_uid || "No card assigned"}</p>
+                                                </div>
+                                                {rfidCapture === "edit" ? (
+                                                    <button type="button" onClick={cancelRfidCapture} className="rounded-xl border border-red-200 bg-white px-4 py-2 text-xs font-semibold text-red-600">
+                                                        Cancel scan
+                                                    </button>
+                                                ) : (
+                                                    <button type="button" onClick={() => captureRfid("edit")} className="rounded-xl border border-orange-200 bg-white px-4 py-2 text-xs font-semibold text-orange-700 hover:bg-orange-100">
+                                                        Scan replacement card
+                                                    </button>
+                                                )}
+                                            </div>
+                                            {rfidCapture === "edit" && <p className="mt-2 text-xs font-medium text-orange-700">Scan the replacement student card now.</p>}
+                                        </div>
+                                        {rfidCaptureError && <p className="col-span-2 text-xs text-red-600">{rfidCaptureError}</p>}
                                     </div>
                                 </div>
                             ) : viewTab === "details" ? (
