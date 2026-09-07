@@ -1,8 +1,10 @@
 "use client"
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { clearRfidLoginResult, getRfidLoginResult, loginAdmin } from "@/lib/api"
 
 export default function LoginPage() {
+    const router = useRouter()
     const [username, setUsername] = useState("")
     const [password, setPassword] = useState("")
     const [showPassword, setShowPassword] = useState(false)

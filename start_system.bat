@@ -1,6 +1,7 @@
 @echo off
 setlocal EnableExtensions
-cd /d "C:\AttendanceSystem"
+set "APP_ROOT=%~dp0"
+cd /d "%APP_ROOT%"
 title ICT Attendance System - Starting...
 color 0A
 
@@ -37,14 +38,14 @@ echo       Database ready.
 echo.
 echo [2/3] Starting backend API server...
 if "!BACKEND_RUNNING!" == "1" goto backend_ready
-if not exist "C:\AttendanceSystem\backend\AttendanceServer.exe" (
+if not exist "%APP_ROOT%backend\AttendanceServer.exe" (
     echo ERROR: Backend executable is missing.
     pause
     exit /b 1
 )
-if not exist "C:\AttendanceSystem\logs" mkdir "C:\AttendanceSystem\logs"
-cd /d "C:\AttendanceSystem\backend"
-start /min "" cmd /c "AttendanceServer.exe >> C:\AttendanceSystem\logs\backend.log 2>&1"
+if not exist "%APP_ROOT%logs" mkdir "%APP_ROOT%logs"
+cd /d "%APP_ROOT%backend"
+start /min "" cmd /c ^""%APP_ROOT%backend\AttendanceServer.exe" >> "%APP_ROOT%logs\backend.log" 2>&1^"
 echo       Waiting for backend to start...
 timeout /t 5 >nul
 
@@ -52,7 +53,7 @@ timeout /t 5 >nul
 curl -fsS http://localhost:8000/ >nul 2>&1
 if %errorLevel% neq 0 (
     echo ERROR: Backend did not respond at http://localhost:8000
-    echo        Check C:\AttendanceSystem\logs\backend.log
+    echo        Check %APP_ROOT%logs\backend.log
     pause
     exit /b 1
 )
@@ -62,19 +63,19 @@ echo       Backend ready at http://localhost:8000
 
 echo.
 echo [3/3] Starting frontend dashboard...
-if not exist "C:\AttendanceSystem\frontend\package.json" (
+if not exist "%APP_ROOT%frontend\package.json" (
     echo ERROR: Frontend package.json is missing.
     pause
     exit /b 1
 )
-cd /d "C:\AttendanceSystem\frontend"
-start /min "" cmd /c "npm start >> C:\AttendanceSystem\logs\frontend.log 2>&1"
+cd /d "%APP_ROOT%frontend"
+start /min "" cmd /c ^"cd /d "%APP_ROOT%frontend" ^&^& npm start >> "%APP_ROOT%logs\frontend.log" 2>&1^"
 echo       Waiting for dashboard to start...
 timeout /t 8 >nul
 curl -fsS http://localhost:3000/ >nul 2>&1
 if %errorLevel% neq 0 (
     echo ERROR: Frontend did not respond at http://localhost:3000
-    echo        Check C:\AttendanceSystem\logs\frontend.log
+    echo        Check %APP_ROOT%logs\frontend.log
     pause
     exit /b 1
 )

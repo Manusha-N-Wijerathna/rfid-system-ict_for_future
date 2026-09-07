@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from "react"
 import {
     getStudents, getLiveAttendance, getAttendance,
-    getPayments, manualMark, removeAttendanceRecord, getMonthlyReport,getTotalStudents
+    getPayments, manualMark, removeAttendanceRecord, getMonthlyReport
 } from "@/lib/api"
 import StudentReportModal from "@/components/StudentReportModal"
 
@@ -30,8 +30,12 @@ export default function AttendancePage() {
 
     const fetchLive = useCallback(async () => {
         try {
-            const res = await getLiveAttendance()
-            setLiveRecords(res.data)
+            const [attendanceRes, studentsRes] = await Promise.all([
+                getLiveAttendance(),
+                getStudents(),
+            ])
+            setLiveRecords(attendanceRes.data)
+            setTotalStudents(studentsRes.data.length)
             setLiveError(null)
         } catch { setLiveError("Cannot reach server") }
         finally { setLiveLoading(false) }
@@ -182,7 +186,9 @@ export default function AttendancePage() {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-3xl font-bold text-purple-700">
-                                        {((liveRecords.length / 17) * 100).toFixed(1)}%
+                                        {totalStudents > 0
+                                            ? ((liveRecords.length / totalStudents) * 100).toFixed(1)
+                                            : "0.0"}%
                                     </p>
                                     <p className="text-sm text-gray-600 mt-1">Attendance Rate</p>
                                 </div>
