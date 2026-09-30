@@ -57,28 +57,27 @@ export default function Sidebar() {
 
             {/* Sidebar */}
             <aside 
-                className={`hidden lg:flex relative z-30 bg-white shadow-xl flex-col transition-all duration-300 ease-in-out
+                className={`hidden lg:flex relative z-30 bg-white/95 backdrop-blur-md border-r border-slate-200/80 shadow-[1px_0_12px_0_rgba(15,23,42,0.03)] flex-col transition-all duration-300 ease-in-out
                     ${collapsed ? 'w-20' : 'w-64'} h-full`}
             >
                 {/* Header with Icon */}
-                <div className={`px-5 py-6 border-b border-gray-100 transition-all duration-300
+                <div className={`px-5 py-5 border-b border-slate-100 transition-all duration-300
                     ${collapsed ? 'px-3' : 'px-5'}`}>
                     {!collapsed ? (
                         <>
                             <div className="flex items-center gap-3">
-                                {/* Icon Container - Removed "IF" text and added School icon */}
-                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-600 to-emerald-600 flex items-center justify-center shadow-md">
+                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md shadow-emerald-500/20 ring-2 ring-emerald-500/10">
                                     <School className="w-5 h-5 text-white" />
                                 </div>
-                                <div>
-                                    <h1 className="font-bold text-gray-800 text-base">ICT For Future</h1>
-                                    <p className="text-xs text-gray-400 mt-0.5">Teacher Dashboard</p>
+                                <div className="min-w-0">
+                                    <h1 className="font-bold text-slate-800 text-sm tracking-tight truncate">ICT For Future</h1>
+                                    <p className="text-[11px] font-medium text-slate-400 mt-0.5 truncate">Smart School System</p>
                                 </div>
                             </div>
                         </>
                     ) : (
                         <div className="flex justify-center">
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-600 to-emerald-600 flex items-center justify-center shadow-md">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md shadow-emerald-500/20 ring-2 ring-emerald-500/10">
                                 <School className="w-5 h-5 text-white" />
                             </div>
                         </div>
@@ -86,9 +85,12 @@ export default function Sidebar() {
                 </div>
 
                 {/* Navigation */}
-                <nav className="flex-1 px-3 py-6 space-y-6 overflow-y-auto">
+                <nav className="flex-1 px-3 py-5 space-y-6 overflow-y-auto">
                     {/* Main Navigation */}
                     <div className="space-y-1">
+                        <div className={`px-3 mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 ${collapsed ? 'hidden' : 'block'}`}>
+                            Menu
+                        </div>
                         {navItems.map((item) => {
                             const active = pathname === item.href || pathname.startsWith(item.href + "/")
                             const Icon = item.icon
@@ -97,22 +99,22 @@ export default function Sidebar() {
                                     key={item.href}
                                     href={item.href}
                                     className={`
-                                        flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200
+                                        flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200
                                         ${active 
-                                            ? "bg-gradient-to-r from-green-50 to-emerald-50 text-green-700 shadow-sm" 
-                                            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                                            ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/25" 
+                                            : "text-slate-600 hover:bg-slate-100/80 hover:text-slate-900"
                                         }
                                         ${collapsed ? 'justify-center px-2' : ''}
                                         group relative
                                     `}
                                     title={collapsed ? item.label : ""}
                                 >
-                                    <Icon className={`w-5 h-5 transition-all duration-200 ${active ? "text-green-600" : "text-gray-400 group-hover:text-gray-600"}`} />
+                                    <Icon className={`w-4 h-4 transition-all duration-200 ${active ? "text-white" : "text-slate-400 group-hover:text-slate-700"}`} />
                                     {!collapsed && <span>{item.label}</span>}
                                     
                                     {/* Tooltip for collapsed mode */}
                                     {collapsed && (
-                                        <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                                        <div className="absolute left-full ml-2 px-2.5 py-1 bg-slate-900 text-white text-xs font-medium rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none whitespace-nowrap z-50 shadow-lg">
                                             {item.label}
                                         </div>
                                     )}
@@ -122,10 +124,13 @@ export default function Sidebar() {
                     </div>
 
                     {/* Divider */}
-                    <div className="border-t border-gray-100 my-4"></div>
+                    <div className="border-t border-slate-100 my-4"></div>
 
                     {/* Bottom Navigation */}
                     <div className="space-y-1">
+                        <div className={`px-3 mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 ${collapsed ? 'hidden' : 'block'}`}>
+                            Preferences
+                        </div>
                         {bottomNavItems.map((item) => {
                             const active = pathname === item.href
                             const Icon = item.icon
@@ -134,21 +139,21 @@ export default function Sidebar() {
                                     key={item.href}
                                     href={item.href}
                                     className={`
-                                        flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200
+                                        flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200
                                         ${active 
-                                            ? "bg-gradient-to-r from-green-50 to-emerald-50 text-green-700" 
-                                            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                                            ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/25" 
+                                            : "text-slate-600 hover:bg-slate-100/80 hover:text-slate-900"
                                         }
                                         ${collapsed ? 'justify-center px-2' : ''}
                                         group relative
                                     `}
                                     title={collapsed ? item.label : ""}
                                 >
-                                    <Icon className={`w-5 h-5 transition-all duration-200 ${active ? "text-green-600" : "text-gray-400 group-hover:text-gray-600"}`} />
+                                    <Icon className={`w-4 h-4 transition-all duration-200 ${active ? "text-white" : "text-slate-400 group-hover:text-slate-700"}`} />
                                     {!collapsed && <span>{item.label}</span>}
                                     
                                     {collapsed && (
-                                        <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                                        <div className="absolute left-full ml-2 px-2.5 py-1 bg-slate-900 text-white text-xs font-medium rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none whitespace-nowrap z-50 shadow-lg">
                                             {item.label}
                                         </div>
                                     )}
@@ -159,19 +164,19 @@ export default function Sidebar() {
                 </nav>
 
                 {/* Footer */}
-                <div className={`border-t border-gray-100 pt-4 pb-6 ${collapsed ? 'px-3' : 'px-5'}`}>
+                <div className={`border-t border-slate-100 pt-3 pb-5 ${collapsed ? 'px-3' : 'px-4'}`}>
                     {!collapsed ? (
-                        <div className="space-y-3">
-                            <button onClick={handleLogout} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-red-600 hover:bg-red-50 transition-colors duration-200 cursor-pointer">
-                                <LogOut className="w-4 h-4" />
+                        <div className="space-y-2">
+                            <button onClick={handleLogout} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 transition-colors duration-200 cursor-pointer">
+                                <LogOut className="w-4 h-4 text-rose-500" />
                                 <span>Logout</span>
                             </button>
                         </div>
                     ) : (
-                        <div className="flex flex-col items-center gap-3">
-                            <button onClick={handleLogout} className="p-2 rounded-lg text-red-600 hover:bg-red-50 transition-colors duration-200 group relative cursor-pointer">
-                                <LogOut className="w-5 h-5" />
-                                <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                        <div className="flex flex-col items-center">
+                            <button onClick={handleLogout} className="p-2.5 rounded-xl text-rose-600 hover:bg-rose-50 transition-colors duration-200 group relative cursor-pointer">
+                                <LogOut className="w-4 h-4 text-rose-500" />
+                                <div className="absolute left-full ml-2 px-2.5 py-1 bg-slate-900 text-white text-xs font-medium rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none whitespace-nowrap z-50 shadow-lg">
                                     Logout
                                 </div>
                             </button>

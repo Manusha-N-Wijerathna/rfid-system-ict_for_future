@@ -11,6 +11,9 @@ echo.
 
 echo [1/2] Stopping backend server...
 taskkill /f /im AttendanceServer.exe >nul 2>&1
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr /r /c:":8000[ ]" ^| findstr /c:"LISTENING"') do (
+    taskkill /f /pid %%a >nul 2>&1
+)
 echo       Backend stopped.
 
 echo.
@@ -25,4 +28,5 @@ echo ============================================
 echo   System stopped successfully.
 echo ============================================
 echo.
-pause
+timeout /t 3 >nul
+exit /b 0
